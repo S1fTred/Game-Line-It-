@@ -1,3 +1,4 @@
+
 class Card:
     def __init__(self, number, color, card_type):
         self.number = number

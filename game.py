@@ -1,5 +1,6 @@
 import market
 
+
 class Game:
     def __init__(self, players, deck):
         self.players = players
