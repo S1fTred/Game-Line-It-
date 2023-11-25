@@ -19,26 +19,22 @@ class Player:
             print("У вас нет места в руке для еще одной карты.")
         return False  # Взятие карты не удалось
 
-    def play_card_from_hand(self, card):
-        if card in self.hand:
-            self.hand.remove(card)  # Убираем карту из руки игрока
-            self.line.append(card)  # Добавляем карту в линию игрока
-            return True  # Разыгрывание карты прошло успешно
+    def play_card_from_hand(self, hand_index):
+        if 0 <= hand_index < len(self.hand):
+            card = self.hand.pop(hand_index)
+            self.line.append(card)
+            return True
         else:
             print("У вас нет такой карты в руке.")
-        return False  # Разыгрывание карты не удалось
+        return False
 
     def complete_line(self):
-        if self.line:  # Проверка, что у игрока есть карты в линии
-            if self.tokens:  # Проверка, что у игрока есть жетоны ставок
-                token = self.tokens[0]  # Предполагается, что игрок может иметь только один жетон ставки
-                num_cards = 0
-                for card in self.line:
-                    if card.card_type == 'number':
-                        num_cards += 1
+        if self.line:
+            if self.tokens:
+                token = self.tokens[0]
+                num_cards = sum(1 for card in self.line if card.card_type == 'number')
 
                 if num_cards == token.number - 3:
-                    # Игрок выполнил условия для получения бонусного жетона
                     if token.number > 0:
                         self.tokens.remove(token)
                         self.score_stack.extend(self.line)
@@ -50,13 +46,11 @@ class Player:
                         self.line = []
                         print(f"{self.name} выполнил условия для получения бонусного жетона -{-token.number}")
                 else:
-                    # Игрок не выполнил условия для получения жетона
                     self.tokens.remove(token)
                     self.score_stack.extend(self.line)
                     self.line = []
                     print(f"{self.name} не выполнил условия для получения жетона")
             else:
-                # Игрок завершает линию без жетонов ставок
                 self.score_stack.extend(self.line)
                 self.line = []
                 print(f"{self.name} завершил линию без ставки")

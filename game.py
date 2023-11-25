@@ -1,22 +1,22 @@
-import market
+from deck import Deck
+from player import Player
+from card import Card
 
 
 class Game:
     def __init__(self, players, deck):
         self.players = players
-        self.market = market.Market()
+        self.market = Deck()
         self.current_player = 0
         self.round = 1
         self.deck = deck
 
     def start_round(self):
-        # 1. Извлекаем 2 карты для каждого игрока и 2 дополнительные для рынка.
         cards_for_market = self.deck.draw_cards(2)
         for player in self.players:
             player.hand.extend(self.deck.draw_cards(2))
-        self.market.update_market(cards_for_market)
+        self.market.update_deck(cards_for_market)
 
-        # 2. Назначаем первого игрока для начала раунда.
         self.current_player = 0
 
         print(f"Начало раунда {self.round}")
@@ -24,22 +24,19 @@ class Game:
         print(f"Ход игрока {self.players[self.current_player].name}")
 
     def end_round(self):
-        # Сброс карт из линий всех игроков в стопки очков
         for player in self.players:
             player.score_stack.extend(player.line)
             player.line = []
 
-        # Обновление рынка, добавляем оставшиеся карты из колоды
         remaining_cards = self.deck.draw_cards(len(self.market.cards))
-        self.market.update_market(remaining_cards)
+        self.market.update_deck(remaining_cards)
 
-        # Подсчет очков и обработка жетонов джекпота
         for player in self.players:
             player_score = sum(card.number for card in player.score_stack)
             for card in player.score_stack:
                 if card.card_type == 'number':
-                    player_score += 1  # Дополнительное очко за каждую числовую карту
-            # Подсчет жетонов джекпота
+                    player_score += 1
+
             jackpot_tokens = {}
             for card in player.score_stack:
                 if card.card_type == 'number':
@@ -51,15 +48,45 @@ class Game:
                         player_score += sum(card.number for card in jackpot_tokens[card.color])
                         jackpot_tokens[card.color] = []
 
-            # Добавление полученных очков
-            player.tokens.append(jackpot_tokens)  # Возвращение неполученных жетонов
+            player.tokens.append(jackpot_tokens)
             player.score_stack = []
             print(f"{player.name}: {player_score} очков")
 
-        # Переход к следующему раунду
         self.round += 1
         self.current_player = 0
 
     def next_turn(self):
         # Переход к следующему игроку по кругу
         self.current_player = (self.current_player + 1) % len(self.players)
+
+    def play_game(self):
+        for round_num in range(1, 4):
+            self.start_round()
+
+            while True:
+                current_player = self.players[self.current_player]
+                print(f"\nХод игрока {current_player.name}")
+                print(f"Рука игрока: {[str(card) for card in current_player.hand]}")
+
+                market_index = int(input("Выберите индекс карты для взятия с рынка: "))
+                current_player.take_card_from_market(self.market, market_index)
+
+                hand_index = int(input("Выберите индекс карты для разыгрывания: "))
+                current_player.play_card_from_hand(hand_index)
+
+                complete_line_choice = input("Хотите завершить линию? (y/n): ")
+                if complete_line_choice.lower() == 'y':
+                    current_player.complete_line()
+
+                self.next_turn()
+
+                if len(self.deck.cards) == 0:
+                    break
+
+            self.end_round()
+
+        print("\nИгра завершена.")
+        for player in self.players:
+            print(f"{player.name}: {sum(card.number for card in player.score_stack)} очков")
+
+
